@@ -1,0 +1,15 @@
+Changes
+LICENSE
+MANIFEST
+Makefile.PL
+README.md
+lib/Physics/CPD.pm
+lib/Physics/CPD/Stellerator.pm
+examples/plasma_parameters.pl
+examples/w7x_simulation.pl
+examples/plot_3d_design.pl
+t/00-load.t
+t/01-cpd.t
+t/02-stellerator.t
+t/03-geometry.t
+t/04-plotting.t

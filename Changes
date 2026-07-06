@@ -1,0 +1,18 @@
+Revision history for Physics-Stellerator
+
+0.01  2026-07-06
+      - Initial release.
+      - Physics::CPD: pure-Perl computational-plasma-dynamics engine
+        (plasma/cyclotron frequencies, Debye length, gyroradii, thermal and
+        Alfven speeds, ion sound speed, pressures, beta, Coulomb logarithm,
+        collision frequency, mean free path, Spitzer resistivity, plasma
+        parameter; multi-species support).
+      - Physics::CPD::Stellerator: Wendelstein 7-X model extending Physics::CPD
+        (aspect ratio, plasma volume/surface, rotational transform, ISS04
+        confinement scaling, stored energy, Sudo density limit, beta/density
+        fractions, Lawson triple product, ECRH resonance field, radial
+        profiles).
+      - VMEC-style Fourier boundary geometry: flux surfaces, helical magnetic
+        axis, nested surfaces and modular coils.
+      - Plotting via PDL::Graphics::Gnuplot: 3-D design diagram, poloidal
+        cross sections, radial profiles and confinement scans.
