@@ -2,13 +2,13 @@
 use strict;
 use warnings;
 use lib 'lib';
-use Physics::CPD::Stellerator;
+use Physics::CPD::Stellarator;
 
 # Produce the full set of Wendelstein 7-X visualisations as PNG files.
 # Requires PDL, PDL::Graphics::Gnuplot and a gnuplot binary.
 my $outdir = shift @ARGV || '.';
 
-my $w7x = Physics::CPD::Stellerator->new(
+my $w7x = Physics::CPD::Stellarator->new(
     electron_density     => 8e19,
     electron_temperature => 4000,
     ion_temperature      => 2500,

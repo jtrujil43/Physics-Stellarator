@@ -1,9 +1,9 @@
 use strict;
 use warnings;
 use Test::More;
-use Physics::CPD::Stellerator;
+use Physics::CPD::Stellarator;
 
-my $w = Physics::CPD::Stellerator->new;
+my $w = Physics::CPD::Stellarator->new;
 my $PI = 3.14159265358979;
 
 # boundary_point at u=v=0, scale=1 is the sum of the R cosine coefficients

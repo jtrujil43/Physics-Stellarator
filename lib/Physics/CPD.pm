@@ -372,7 +372,7 @@ Temperatures are supplied in B<electron-volts> (eV), the customary plasma unit;
 all other quantities use SI.  The class is built with L<Moo> so every state
 variable is a read/write accessor and derived quantities are ordinary methods.
 
-It is the computational base for L<Physics::CPD::Stellerator>, which adds
+It is the computational base for L<Physics::CPD::Stellarator>, which adds
 stellarator geometry and Wendelstein 7-X modelling.
 
 =head1 ATTRIBUTES
@@ -418,15 +418,15 @@ C<as_hash>, C<report>.
 
 =head1 SEE ALSO
 
-L<Physics::CPD::Stellerator>
+L<Physics::CPD::Stellarator>
 
 =head1 AUTHOR
 
-Generated for the Physics-Stellerator project.
+Generated for the Physics-Stellarator project.
 
 =head1 LICENSE
 
-Copyright (C) 2026 the Physics-Stellerator authors.
+Copyright (C) 2026 the Physics-Stellarator authors.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software

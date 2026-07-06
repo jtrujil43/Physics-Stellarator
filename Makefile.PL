@@ -4,10 +4,10 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME          => 'Physics::CPD',
-    DISTNAME      => 'Physics-Stellerator',
-    VERSION_FROM  => 'lib/Physics/CPD/Stellerator.pm',
+    DISTNAME      => 'Physics-Stellarator',
+    VERSION_FROM  => 'lib/Physics/CPD/Stellarator.pm',
     ABSTRACT      => 'Computational plasma dynamics with Wendelstein 7-X stellarator modelling and 3-D visualisation',
-    AUTHOR        => 'Physics-Stellerator project',
+    AUTHOR        => 'Physics-Stellarator project',
     LICENSE       => 'gpl_3',
     MIN_PERL_VERSION => '5.010',
 
@@ -34,5 +34,5 @@ WriteMakefile(
     },
 
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
-    clean => { FILES    => 'Physics-Stellerator-* *.png' },
+    clean => { FILES    => 'Physics-Stellarator-* *.png' },
 );

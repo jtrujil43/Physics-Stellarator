@@ -1,4 +1,4 @@
-# Physics-Stellerator
+# Physics-Stellarator
 
 Computational plasma dynamics in Perl, with a full model and 3‑D visualisation
 of the **Wendelstein 7‑X** stellarator.
@@ -8,12 +8,7 @@ The distribution provides two modules:
 | Module | Role |
 |--------|------|
 | **`Physics::CPD`** | Pure‑Perl *Computational Plasma Dynamics* engine — fundamental magnetised‑plasma parameters from density, temperature, magnetic field and ion species. |
-| **`Physics::CPD::Stellerator`** | Extends `Physics::CPD` with stellarator geometry and physics, using **Wendelstein 7‑X** (W7‑X, IPP Greifswald) as the default configuration, plus plotting and 3‑D design diagrams. |
-
-> **A note on spelling.** The correct English term is *stellarator*. This
-> distribution uses the module name **`Physics::CPD::Stellerator`** (with an
-> `e`) exactly as requested; the physics and documentation refer to the real
-> *stellarator* concept and the Wendelstein 7‑X device.
+| **`Physics::CPD::Stellarator`** | Extends `Physics::CPD` with stellarator geometry and physics, using **Wendelstein 7‑X** (W7‑X, IPP Greifswald) as the default configuration, plus plotting and 3‑D design diagrams. |
 
 ---
 
@@ -29,7 +24,7 @@ The distribution provides two modules:
   **collision frequency**, **mean free path**, **Spitzer resistivity**.
 * Multi‑species ions (`H, D, T, He, He3, C, O, …`); temperatures in **eV**.
 
-### `Physics::CPD::Stellerator` — Wendelstein 7‑X model
+### `Physics::CPD::Stellarator` — Wendelstein 7‑X model
 
 * Device parameters: major/minor radius, **5 field periods**, coil counts,
   rotational transform *ι*, design **β limit**, pulse length, ECRH gyrotron.
@@ -88,9 +83,9 @@ printf "beta = %.2f %%\n", 100 * $plasma->plasma_beta;
 ### Wendelstein 7‑X
 
 ```perl
-use Physics::CPD::Stellerator;
+use Physics::CPD::Stellarator;
 
-my $w7x = Physics::CPD::Stellerator->new(
+my $w7x = Physics::CPD::Stellarator->new(
     electron_density     => 8e19,
     electron_temperature => 4000,
     ion_temperature      => 2500,

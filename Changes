@@ -1,4 +1,4 @@
-Revision history for Physics-Stellerator
+Revision history for Physics-Stellarator
 
 0.01  2026-07-06
       - Initial release.
@@ -7,7 +7,7 @@ Revision history for Physics-Stellerator
         Alfven speeds, ion sound speed, pressures, beta, Coulomb logarithm,
         collision frequency, mean free path, Spitzer resistivity, plasma
         parameter; multi-species support).
-      - Physics::CPD::Stellerator: Wendelstein 7-X model extending Physics::CPD
+      - Physics::CPD::Stellarator: Wendelstein 7-X model extending Physics::CPD
         (aspect ratio, plasma volume/surface, rotational transform, ISS04
         confinement scaling, stored energy, Sudo density limit, beta/density
         fractions, Lawson triple product, ECRH resonance field, radial

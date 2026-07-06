@@ -1,4 +1,4 @@
-package Physics::CPD::Stellerator;
+package Physics::CPD::Stellarator;
 
 use strict;
 use warnings;
@@ -565,13 +565,13 @@ __END__
 
 =head1 NAME
 
-Physics::CPD::Stellerator - Model and visualise the Wendelstein 7-X stellarator
+Physics::CPD::Stellarator - Model and visualise the Wendelstein 7-X stellarator
 
 =head1 SYNOPSIS
 
-    use Physics::CPD::Stellerator;
+    use Physics::CPD::Stellarator;
 
-    my $w7x = Physics::CPD::Stellerator->new(
+    my $w7x = Physics::CPD::Stellarator->new(
         electron_density     => 8e19,    # m^-3
         electron_temperature => 4000,    # eV
         ion_temperature      => 2000,    # eV
@@ -593,7 +593,7 @@ Physics::CPD::Stellerator - Model and visualise the Wendelstein 7-X stellarator
 
 =head1 DESCRIPTION
 
-C<Physics::CPD::Stellerator> extends L<Physics::CPD> with the geometry and
+C<Physics::CPD::Stellarator> extends L<Physics::CPD> with the geometry and
 engineering/plasma parameters needed to simulate a I<stellarator>, using the
 B<Wendelstein 7-X> (W7-X) device at IPP Greifswald as its default
 configuration.  It inherits every plasma calculation of the base class and
@@ -666,11 +666,11 @@ Nucl. Fusion 45 (2005) 1684.
 
 =head1 AUTHOR
 
-Generated for the Physics-Stellerator project.
+Generated for the Physics-Stellarator project.
 
 =head1 LICENSE
 
-Copyright (C) 2026 the Physics-Stellerator authors.
+Copyright (C) 2026 the Physics-Stellarator authors.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software

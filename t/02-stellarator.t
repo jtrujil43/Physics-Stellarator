@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use Test::More;
-use Physics::CPD::Stellerator;
+use Physics::CPD::Stellarator;
 
 sub approx {
     my ( $got, $exp, $tol, $name ) = @_;
@@ -11,7 +11,7 @@ sub approx {
     ok( $ok, $name ) or diag("  got $got, expected $exp");
 }
 
-my $w = Physics::CPD::Stellerator->new(
+my $w = Physics::CPD::Stellarator->new(
     electron_density     => 8e19,
     electron_temperature => 4000,
     ion_temperature      => 2000,
@@ -48,10 +48,10 @@ approx(
     my %base = (
         electron_density => 8e19, electron_temperature => 4000,
         magnetic_field => 2.5, heating_power => 10 );
-    my $b  = Physics::CPD::Stellerator->new(%base);
-    my $bn = Physics::CPD::Stellerator->new( %base, electron_density => 1.6e20 );
-    my $bp = Physics::CPD::Stellerator->new( %base, heating_power => 20 );
-    my $bb = Physics::CPD::Stellerator->new( %base, magnetic_field => 5 );
+    my $b  = Physics::CPD::Stellarator->new(%base);
+    my $bn = Physics::CPD::Stellarator->new( %base, electron_density => 1.6e20 );
+    my $bp = Physics::CPD::Stellarator->new( %base, heating_power => 20 );
+    my $bb = Physics::CPD::Stellarator->new( %base, magnetic_field => 5 );
     approx( $bn->confinement_time_iss04 / $b->confinement_time_iss04, 2**0.54, 1e-6, 'ISS04 density exponent 0.54' );
     approx( $bp->confinement_time_iss04 / $b->confinement_time_iss04, 2**-0.61, 1e-6, 'ISS04 power exponent -0.61' );
     approx( $bb->confinement_time_iss04 / $b->confinement_time_iss04, 2**0.84, 1e-6, 'ISS04 field exponent 0.84' );

@@ -2,10 +2,10 @@
 use strict;
 use warnings;
 use lib 'lib';
-use Physics::CPD::Stellerator;
+use Physics::CPD::Stellarator;
 
 # Simulate a Wendelstein 7-X high-performance discharge.
-my $w7x = Physics::CPD::Stellerator->new(
+my $w7x = Physics::CPD::Stellarator->new(
     electron_density     => 8e19,    # m^-3
     electron_temperature => 4000,    # eV
     ion_temperature      => 2500,    # eV

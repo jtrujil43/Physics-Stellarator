@@ -3,7 +3,7 @@ use warnings;
 use Test::More;
 use File::Temp qw(tempdir);
 use File::Spec;
-use Physics::CPD::Stellerator;
+use Physics::CPD::Stellarator;
 
 # Plotting needs PDL + PDL::Graphics::Gnuplot + a gnuplot binary. Skip cleanly
 # if any part of that toolchain is unavailable on the test machine.
@@ -15,7 +15,7 @@ my $have_plot = eval {
 plan skip_all => 'PDL / PDL::Graphics::Gnuplot not available' unless $have_plot;
 
 my $dir = tempdir( CLEANUP => 1 );
-my $w   = Physics::CPD::Stellerator->new(
+my $w   = Physics::CPD::Stellarator->new(
     electron_density     => 8e19,
     electron_temperature => 4000,
     ion_temperature      => 2000,
