@@ -5,7 +5,7 @@ use warnings;
 use Moo;
 use Carp qw(croak);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 #---------------------------------------------------------------------------
 # Physical constants (SI units, CODATA 2018)

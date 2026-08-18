@@ -7,9 +7,30 @@ use Carp qw(croak);
 
 extends 'Physics::CPD';
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use constant PI => 3.14159265358979;
+
+#---------------------------------------------------------------------------
+# Fusion (deuterium-tritium) reaction data
+#---------------------------------------------------------------------------
+# Energy released per D-T fusion reaction  T(d,n)4He  [MeV]
+use constant {
+    DT_ENERGY_MEV         => 17.59,          # total energy per reaction
+    DT_ALPHA_ENERGY_MEV   => 3.52,           # 4He alpha (charged, heats plasma)
+    DT_NEUTRON_ENERGY_MEV => 14.07,          # neutron (escapes to the blanket)
+    MEV_TO_JOULE          => 1.602176634e-13,
+};
+
+# Bosch-Hale parametrisation of the Maxwell-averaged reactivity <sigma v> for
+# T(d,n)4He (H.-S. Bosch & G.M. Hale, Nucl. Fusion 32 (1992) 611).  Valid for
+# ion temperatures 0.2-100 keV; accurate to better than ~0.25%.
+my $DT_BG   = 34.3827;      # Gamow constant  [sqrt(keV)]
+my $DT_MRC2 = 1124656;      # reduced-mass energy m_r c^2  [keV]
+my @DT_C    = (             # C1 .. C7
+    1.17302e-9,  1.51361e-2,  7.51886e-2,  4.60643e-3,
+    1.35000e-2, -1.06750e-4,  1.36600e-5,
+);
 
 #---------------------------------------------------------------------------
 # Default Wendelstein 7-X-like boundary (VMEC-style Fourier series).
@@ -89,6 +110,11 @@ has pulse_length => (            # [s]
 has gyrotron_frequency => (      # ECRH gyrotron frequency  [Hz]
     is      => 'rw',
     default => sub { 140e9 },
+);
+
+has dt_fuel_fraction => (        # D-T fuel-ion fraction of n_e (0..1)
+    is      => 'rw',             # 1.0 = pure 50:50 D-T; lower models dilution
+    default => sub { 1.0 },
 );
 
 has boundary_coeffs => (
@@ -201,6 +227,75 @@ sub ecrh_resonance_field {
     $harmonic ||= 2;   # W7-X uses 2nd-harmonic X-mode at 2.5 T / 140 GHz
     return 2 * PI * Physics::CPD::ELECTRON_MASS() * $self->gyrotron_frequency
         / ( $harmonic * Physics::CPD::ELEMENTARY_CHARGE() );
+}
+
+#---------------------------------------------------------------------------
+# Theoretical fusion power production  (assumes a 50:50 D-T plasma)
+#
+# W7-X itself is a hydrogen/deuterium research device and produces negligible
+# fusion power; these methods estimate the power a stellarator of this design
+# *would* deliver if fuelled with deuterium-tritium at the given operating
+# point.  The model is a 0-D estimate that treats n_e and T_i as uniform over
+# the plasma volume, using the Bosch-Hale reactivity above.
+#---------------------------------------------------------------------------
+# Maxwell-averaged D-T reactivity <sigma v>  [m^3/s] at ion temperature
+# $Ti_keV (defaults to the model ion temperature).
+sub dt_reactivity {
+    my ( $self, $Ti_keV ) = @_;
+    $Ti_keV = $self->ion_temperature / 1000 unless defined $Ti_keV;
+    return 0 if $Ti_keV <= 0;
+    my $T   = $Ti_keV;
+    my $num = $T * ( $DT_C[1] + $T * ( $DT_C[3] + $T * $DT_C[5] ) );
+    my $den = 1  + $T * ( $DT_C[2] + $T * ( $DT_C[4] + $T * $DT_C[6] ) );
+    my $theta = $T / ( 1 - $num / $den );
+    my $xi    = ( $DT_BG**2 / ( 4 * $theta ) )**( 1 / 3 );
+    my $sv_cm3 = $DT_C[0] * $theta
+        * sqrt( $xi / ( $DT_MRC2 * $T**3 ) ) * exp( -3 * $xi );
+    return $sv_cm3 * 1e-6;   # cm^3/s -> m^3/s
+}
+
+# Total D-T fuel-ion density  n_fuel = f * n_e  [m^-3]
+sub fuel_ion_density {
+    my ($self) = @_;
+    return $self->dt_fuel_fraction * $self->electron_density;
+}
+
+# Volumetric fusion power density  P/V = n_D n_T <sv> E_DT  [W/m^3]
+# For a 50:50 mix n_D = n_T = n_fuel/2, so n_D n_T = n_fuel^2 / 4.
+sub fusion_power_density {
+    my ($self) = @_;
+    my $nfuel = $self->fuel_ion_density;
+    return 0.25 * $nfuel**2 * $self->dt_reactivity
+        * DT_ENERGY_MEV * MEV_TO_JOULE;
+}
+
+# Total fusion power  [W] and [MW]
+sub fusion_power    { $_[0]->fusion_power_density * $_[0]->plasma_volume }
+sub fusion_power_MW { $_[0]->fusion_power / 1e6 }
+
+# 14.07 MeV neutron power carried to the blanket  [MW]
+sub neutron_power_MW {
+    my ($self) = @_;
+    return $self->fusion_power_MW * ( DT_NEUTRON_ENERGY_MEV / DT_ENERGY_MEV );
+}
+
+# 3.52 MeV alpha (charged-particle) power retained to heat the plasma  [MW]
+sub alpha_power_MW {
+    my ($self) = @_;
+    return $self->fusion_power_MW * ( DT_ALPHA_ENERGY_MEV / DT_ENERGY_MEV );
+}
+
+# Average neutron wall loading over the plasma surface  [MW/m^2]
+sub neutron_wall_load {
+    my ($self) = @_;
+    return $self->neutron_power_MW / $self->plasma_surface_area;
+}
+
+# Fusion energy gain  Q = P_fusion / P_heating  (dimensionless)
+sub fusion_gain_Q {
+    my ($self) = @_;
+    my $p = $self->heating_power;
+    return $p > 0 ? $self->fusion_power_MW / $p : 'inf';
 }
 
 #---------------------------------------------------------------------------
@@ -559,6 +654,28 @@ sub device_report {
     return join( "\n", @l ) . "\n";
 }
 
+# Theoretical fusion-power summary for a 50:50 D-T operating point.
+sub power_report {
+    my ($self) = @_;
+    my @l;
+    push @l, "== Theoretical fusion power (50:50 D-T): " . $self->config_name . " ==";
+    push @l, "  -- operating point --";
+    push @l, sprintf( "  electron density   n_e    = %.3e m^-3", $self->electron_density );
+    push @l, sprintf( "  D-T fuel fraction  f      = %.2f  (n_fuel = %.3e m^-3)",
+        $self->dt_fuel_fraction, $self->fuel_ion_density );
+    push @l, sprintf( "  ion temperature    T_i    = %.2f keV", $self->ion_temperature / 1000 );
+    push @l, sprintf( "  heating power      P_heat = %.1f MW", $self->heating_power );
+    push @l, "  -- fusion output --";
+    push @l, sprintf( "  D-T reactivity     <sv>   = %.3e m^3/s", $self->dt_reactivity );
+    push @l, sprintf( "  fusion power density      = %.3e MW/m^3", $self->fusion_power_density / 1e6 );
+    push @l, sprintf( "  total fusion power P_fus  = %.2f MW", $self->fusion_power_MW );
+    push @l, sprintf( "    neutrons (14.07 MeV)    = %.2f MW", $self->neutron_power_MW );
+    push @l, sprintf( "    alphas   (3.52 MeV)     = %.2f MW", $self->alpha_power_MW );
+    push @l, sprintf( "  neutron wall load         = %.3f MW/m^2", $self->neutron_wall_load );
+    push @l, sprintf( "  fusion gain        Q      = %.2f", $self->fusion_gain_Q );
+    return join( "\n", @l ) . "\n";
+}
+
 1;
 
 __END__
@@ -583,6 +700,13 @@ Physics::CPD::Stellarator - Model and visualise the Wendelstein 7-X stellarator
 
     printf "ISS04 tau_E = %.3f s\n", $w7x->confinement_time_iss04;
     printf "stored W    = %.1f MJ\n", $w7x->stored_energy_MJ;
+
+    # Theoretical fusion power if this design were fuelled with D-T:
+    $w7x->ion_temperature(15000);        # 15 keV
+    $w7x->electron_density(2e20);
+    print $w7x->power_report;
+    printf "P_fusion = %.1f MW,  Q = %.1f\n",
+        $w7x->fusion_power_MW, $w7x->fusion_gain_Q;
 
     # visualisations (written to PNG files)
     $w7x->plot_3d( output => 'w7x_3d.png' );
@@ -609,6 +733,11 @@ international stellarator confinement-time scaling, stored thermal energy, the
 Sudo density limit, plasma-beta and density-limit fractions, the Lawson triple
 product, and the electron-cyclotron-heating resonant field;
 
+=item * theoretical fusion power - Bosch-Hale D-T reactivity, fusion power
+density and total fusion power, the neutron/alpha split, neutron wall loading
+and the fusion gain C<Q>, for evaluating the design as a hypothetical D-T
+reactor;
+
 =item * three-dimensional geometry - the last-closed flux surface described as
 a VMEC-style Fourier series R(u,v), Z(u,v), the helical magnetic axis, nested
 flux surfaces and a set of tilted modular field coils; and
@@ -631,8 +760,9 @@ C<config_name>, C<major_radius> (5.5 m), C<minor_radius> (0.53 m),
 C<num_field_periods> (5), C<iota> (0.96), C<magnetic_field> (2.5 T),
 C<heating_power> (10 MW), C<num_nonplanar_coils> (50), C<num_planar_coils>
 (20), C<beta_limit> (0.05), C<pulse_length> (1800 s),
-C<gyrotron_frequency> (140 GHz), and C<boundary_coeffs> (the Fourier boundary,
-overridable to model any stellarator equilibrium).
+C<gyrotron_frequency> (140 GHz), C<dt_fuel_fraction> (1.0, the D-T fuel-ion
+fraction of C<n_e> used by the fusion-power methods), and C<boundary_coeffs>
+(the Fourier boundary, overridable to model any stellarator equilibrium).
 
 =head1 PHYSICS METHODS
 
@@ -642,6 +772,54 @@ C<stored_energy> / C<stored_energy_MJ>, C<sudo_density_limit>,
 C<beta_fraction>, C<density_fraction>, C<triple_product>,
 C<ecrh_resonance_field>, C<density_profile>, C<temperature_profile>,
 C<device_report>.
+
+=head1 FUSION POWER METHODS
+
+These estimate the fusion power a stellarator of this design would produce if
+fuelled with a 50:50 deuterium-tritium mix.  W7-X itself runs hydrogen or
+deuterium and produces negligible fusion power, so the numbers are a
+I<theoretical> figure of merit for the geometry and operating point.  The model
+is 0-D (it treats C<electron_density> and C<ion_temperature> as uniform over
+C<plasma_volume>).
+
+=over 4
+
+=item dt_reactivity([$Ti_keV])
+
+Maxwell-averaged D-T reactivity C<< <sigma v> >> in m^3/s at ion temperature
+C<$Ti_keV> (defaults to the model C<ion_temperature>), via the Bosch-Hale
+parametrisation (valid 0.2-100 keV).
+
+=item fuel_ion_density
+
+Total D-T fuel-ion density C<dt_fuel_fraction * electron_density> [m^-3].
+
+=item fusion_power_density
+
+Volumetric fusion power C<(n_fuel/2)^2 <sigma v> E_DT> [W/m^3].
+
+=item fusion_power / fusion_power_MW
+
+Total fusion power over the plasma volume, in W and MW.
+
+=item neutron_power_MW / alpha_power_MW
+
+The 14.07 MeV neutron power (to the blanket) and 3.52 MeV alpha power (retained
+to heat the plasma), in MW.
+
+=item neutron_wall_load
+
+Average neutron loading over the plasma surface [MW/m^2].
+
+=item fusion_gain_Q
+
+Fusion energy gain C<Q = fusion_power_MW / heating_power>.
+
+=item power_report
+
+A formatted multi-line summary of the operating point and fusion output.
+
+=back
 
 =head1 GEOMETRY METHODS
 
@@ -662,7 +840,9 @@ L<Physics::CPD>, L<PDL::Graphics::Gnuplot>.
 
 W7-X reference: Klinger et al., "Overview of first Wendelstein 7-X high-
 performance operation", Nucl. Fusion 59 (2019).  ISS04 scaling: Yamada et al.,
-Nucl. Fusion 45 (2005) 1684.
+Nucl. Fusion 45 (2005) 1684.  D-T reactivity: H.-S. Bosch & G.M. Hale,
+"Improved formulas for fusion cross-sections and thermal reactivities",
+Nucl. Fusion 32 (1992) 611.
 
 =head1 AUTHOR
 

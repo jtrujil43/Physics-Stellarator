@@ -1,6 +1,7 @@
 Changes
 examples/plasma_parameters.pl
 examples/plot_3d_design.pl
+examples/power_production.pl
 examples/w7x_simulation.pl
 lib/Physics/CPD.pm
 lib/Physics/CPD/Stellarator.pm
@@ -13,3 +14,4 @@ t/01-cpd.t
 t/02-stellarator.t
 t/03-geometry.t
 t/04-plotting.t
+t/05-fusion.t

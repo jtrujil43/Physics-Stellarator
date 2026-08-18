@@ -1,5 +1,18 @@
 Revision history for Physics-Stellarator
 
+0.02  2026-07-06
+      - Physics::CPD::Stellarator: theoretical fusion-power production for a
+        50:50 D-T plasma - Bosch-Hale reactivity (dt_reactivity), fusion power
+        density and total fusion power (fusion_power / fusion_power_MW), the
+        neutron/alpha split (neutron_power_MW / alpha_power_MW), neutron wall
+        loading (neutron_wall_load), fusion gain Q (fusion_gain_Q) and a
+        power_report; new dt_fuel_fraction attribute.
+      - examples/power_production.pl: theoretical D-T fusion power of the
+        W7-X-class design with ion-temperature and density scans.
+      - README: added a full API reference for both modules and a fusion-power
+        section; expanded method/attribute documentation in the POD.
+      - Tests: t/05-fusion.t validates the reactivity and power relationships.
+
 0.01  2026-07-06
       - Initial release.
       - Physics::CPD: pure-Perl computational-plasma-dynamics engine
