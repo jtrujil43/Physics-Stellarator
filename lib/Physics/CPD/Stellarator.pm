@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Moo;
 use Carp qw(croak);
+use Scalar::Util qw(looks_like_number);
 
 extends 'Physics::CPD';
 
@@ -343,6 +344,72 @@ sub surface_point_xyz {
     my ( $self, $u, $v, $scale ) = @_;
     my ( $R, $Z ) = $self->boundary_point( $u, $v, $scale );
     return ( $R * cos($v), $R * sin($v), $Z );
+}
+
+# Trace an idealised magnetic field line on a constant flux surface.  In these
+# Fourier coordinates the rotational transform is du/dv = iota.
+sub field_line {
+    my $self = shift;
+    croak 'field_line expects named options' if @_ % 2;
+    my %opts = @_;
+    my %known = map { $_ => 1 } qw(
+        turns points_per_turn scale poloidal_angle toroidal_angle iota
+    );
+    for my $name (sort keys %opts) {
+        croak "unknown field_line option '$name'" unless $known{$name};
+    }
+
+    my $turns = defined $opts{turns} ? $opts{turns} : 1;
+    my $points_per_turn = defined $opts{points_per_turn}
+        ? $opts{points_per_turn} : 360;
+    my $scale = defined $opts{scale} ? $opts{scale} : 1;
+    my $u0 = defined $opts{poloidal_angle} ? $opts{poloidal_angle} : 0;
+    my $v0 = defined $opts{toroidal_angle} ? $opts{toroidal_angle} : 0;
+    my $iota = defined $opts{iota} ? $opts{iota} : $self->rotational_transform;
+
+    croak 'turns must be a positive integer'
+        unless _finite_number($turns) && $turns > 0 && int($turns) == $turns;
+    croak 'points_per_turn must be a positive integer'
+        unless _finite_number($points_per_turn) && $points_per_turn > 0
+            && int($points_per_turn) == $points_per_turn;
+    croak 'scale must be a number from 0 to 1'
+        unless _finite_number($scale) && $scale >= 0 && $scale <= 1;
+    croak 'poloidal_angle must be a finite number' unless _finite_number($u0);
+    croak 'toroidal_angle must be a finite number' unless _finite_number($v0);
+    croak 'iota must be a finite number' unless _finite_number($iota);
+
+    my $samples = $turns * $points_per_turn;
+    my ( @X, @Y, @Z );
+    for my $index (0 .. $samples) {
+        my $dv = 2 * PI * $index / $points_per_turn;
+        my $u = $u0 + $iota * $dv;
+        my $v = $v0 + $dv;
+        my ( $x, $y, $z ) = $self->surface_point_xyz($u, $v, $scale);
+        push @X, $x;
+        push @Y, $y;
+        push @Z, $z;
+    }
+    return ( \@X, \@Y, \@Z );
+}
+
+# Polyline length of the idealised field-line trace, in metres.
+sub field_line_length {
+    my ($self, @opts) = @_;
+    my ( $x, $y, $z ) = $self->field_line(@opts);
+    my $length = 0;
+    for my $index (1 .. $#$x) {
+        my $dx = $x->[$index] - $x->[$index - 1];
+        my $dy = $y->[$index] - $y->[$index - 1];
+        my $dz = $z->[$index] - $z->[$index - 1];
+        $length += sqrt($dx * $dx + $dy * $dy + $dz * $dz);
+    }
+    return $length;
+}
+
+sub _finite_number {
+    my ($value) = @_;
+    return defined($value) && !ref($value) && looks_like_number($value)
+        && $value == $value && "$value" !~ /inf/i;
 }
 
 # Magnetic axis: the m=0 part of the boundary (scale = 0).
@@ -749,10 +816,11 @@ L<PDL::Graphics::Gnuplot>.
 =back
 
 Geometry accessors (C<boundary_point>, C<magnetic_axis>, C<cross_section>,
-C<surface_grid>, C<modular_coils>) are pure Perl and return array references,
-so they can be used and tested without PDL.  Only the C<plot_*> methods require
-L<PDL> and L<PDL::Graphics::Gnuplot>; they are loaded on demand and render to an
-image file (default terminal C<pngcairo>), so they work on headless machines.
+C<surface_grid>, C<modular_coils>, C<field_line>, and C<field_line_length>) are
+pure Perl and return array references or scalars, so they can be used and tested
+without PDL.  Only the C<plot_*> methods require L<PDL> and
+L<PDL::Graphics::Gnuplot>; they are loaded on demand and render to an image file
+(default terminal C<pngcairo>), so they work on headless machines.
 
 =head1 KEY ATTRIBUTES
 
@@ -826,6 +894,24 @@ A formatted multi-line summary of the operating point and fusion output.
 C<boundary_point($u,$v,$scale)>, C<surface_point_xyz>, C<magnetic_axis($n)>,
 C<cross_section($v,$nu,$scale)>, C<surface_grid($nu,$nv,$scale)>,
 C<modular_coils($count,$npts)>.
+
+=over 4
+
+=item field_line(%options)
+
+Returns three array references containing an idealized field-line trace on a
+constant Fourier flux surface.  The trace follows C<du/dv = iota>.  Options are
+C<turns>, C<points_per_turn>, C<scale> (0 to 1), C<poloidal_angle>,
+C<toroidal_angle>, and an optional C<iota> override.  Invalid or unknown
+options raise an exception.  This is a geometric visualization trajectory,
+not a magnetic-equilibrium solver.
+
+=item field_line_length(%options)
+
+Returns the sampled field-line polyline length in metres using the same
+options as C<field_line>.
+
+=back
 
 =head1 PLOTTING METHODS
 

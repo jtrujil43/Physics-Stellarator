@@ -1,5 +1,6 @@
 Changes
 examples/plasma_parameters.pl
+examples/field_line_trace.pl
 examples/plot_3d_design.pl
 examples/power_production.pl
 examples/w7x_simulation.pl
@@ -15,3 +16,4 @@ t/02-stellarator.t
 t/03-geometry.t
 t/04-plotting.t
 t/05-fusion.t
+t/06-field-line.t

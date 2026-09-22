@@ -38,7 +38,8 @@ The distribution provides two modules:
   *Q***.
 * 3‑D geometry: the last‑closed flux surface as a **VMEC‑style Fourier series**
   `R(u,v), Z(u,v)`, the **helical magnetic axis**, nested flux surfaces and
-  **modular field coils** — fully parameterised so you can model other
+  **modular field coils**, plus idealized **field-line traces** driven by the
+  rotational transform — fully parameterised so you can model other
   stellarators by supplying your own boundary coefficients.
 * Plotting via `PDL::Graphics::Gnuplot` (headless‑safe PNG output):
   **3‑D design diagram**, **poloidal cross sections**, **radial profiles**,
@@ -102,6 +103,14 @@ print $w7x->device_report;
 printf "ISS04 tau_E = %.3f s\n",  $w7x->confinement_time_iss04;
 printf "stored W    = %.1f MJ\n", $w7x->stored_energy_MJ;
 
+# Pure-Perl field-line trace: five toroidal turns on the 70% flux surface
+my ($x, $y, $z) = $w7x->field_line(
+    turns => 5, points_per_turn => 72, scale => 0.7,
+);
+printf "field-line length = %.1f m (%d samples)\n",
+    $w7x->field_line_length(turns => 5, points_per_turn => 72, scale => 0.7),
+    scalar @$x;
+
 # Visualisations (PNG files)
 $w7x->plot_3d( output => 'w7x_3d.png' );              # 3-D design diagram
 $w7x->plot_cross_sections( output => 'w7x_cross.png');# flux-surface sections
@@ -150,6 +159,8 @@ Runnable scripts in [`examples/`](examples):
 * `w7x_simulation.pl` — W7‑X report and a density scan (τ_E, triple product, β).
 * `power_production.pl` — theoretical D‑T fusion power of the W7‑X‑class design,
   with ion‑temperature and density scans (P_fus, neutron wall load, *Q*).
+* `field_line_trace.pl` — traces a rotational-transform trajectory on a nested
+  flux surface and reports its sampled coordinates and path length.
 * `plot_3d_design.pl` — writes all four PNG visualisations
   (`perl examples/plot_3d_design.pl [output_dir]`).
 
@@ -242,7 +253,15 @@ plasma volume, Bosch‑Hale reactivity)
 
 `boundary_point($u,$v[,$scale])`, `surface_point_xyz($u,$v[,$scale])`,
 `magnetic_axis([$n])`, `cross_section($v[,$nu,$scale])`,
-`surface_grid([$nu,$nv,$scale])`, `modular_coils([$count,$npts])`.
+`surface_grid([$nu,$nv,$scale])`, `modular_coils([$count,$npts])`,
+`field_line(%options)`, `field_line_length(%options)`.
+
+`field_line` follows the idealized relation `du/dv = iota` on a constant
+Fourier flux surface. Options are `turns`, `points_per_turn`, `scale` (0–1),
+`poloidal_angle`, `toroidal_angle`, and an optional `iota` override. It returns
+three array references `(x, y, z)`; `field_line_length` returns the sampled
+polyline length in metres. This is a geometric trace, not an equilibrium field
+solver.
 
 **Plotting methods** (require `PDL` + `PDL::Graphics::Gnuplot`; each takes an
 `output =>` filename and returns the filename written)
